@@ -78,6 +78,9 @@ public class GUIFrame extends JFrame implements KeyListener, MouseListener {
 	}
 
 	public static void main(String[] args0) {
+//		ComplexNumber c = new ComplexNumber(3, 2, 2, 5);
+//		c.pow(5);
+//		System.out.println(c.getRealPart() + " " + c.getImaginaryPart() + "i");
 		new GUIFrame("Fractal Explorer Jones Klarlund Dennerlein");
 	}
 	

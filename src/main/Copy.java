@@ -11,7 +11,7 @@ import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-public class FractalManager extends JPanel {
+public class Copy extends JPanel {
 	// Constant screen dimensions
 	// public final int SCREEN_WIDTH = 800;
 	// public final int SCREEN_HEIGHT = 600;
@@ -32,7 +32,7 @@ public class FractalManager extends JPanel {
 	public double xPos, yPos;
 
 	// Algorithm variables
-	//public double zx, zy, cX, cY, tmp;
+	public double zx, zy, cX, cY, tmp;
 	
 	// Real and imaginary part of the constant c, determinate shape of the Julia Set
 	double realConst, imgConst;
@@ -47,7 +47,7 @@ public class FractalManager extends JPanel {
 	private int currentFractal;
 	public static final int MANDELBROT_SET = 0, JULIA_SET = 1;
 
-	public FractalManager() {
+	public Copy() {
 		setLayout(new BorderLayout());
 		setSize(800, 600);
 
@@ -110,44 +110,31 @@ public class FractalManager extends JPanel {
 		xPos = 0d;
 		yPos = 0d;
 	}
-	
-	private int calculateIters(ComplexNumber z, int degree){
-		int iter;
-		
-		// escape algor
-		// if zx * zx + zy * zy < 4 then you escape for loop
-		// otherwise iter will hit max iter
-		for (iter = 0; iter < maxIter && z.addSquares() < 4; iter++)
-			z.pow(degree);
-		
-		return iter;
-	}
 
 	private void computeMandelbrotSet() {
 		final int SCREEN_WIDTH = getWidth();
 		final int SCREEN_HEIGHT = getHeight();
 		fractal = new BufferedImage(SCREEN_WIDTH, SCREEN_HEIGHT,
 				BufferedImage.TYPE_INT_RGB);
-		
-		double max = 0;
-		double min = 0;
+
 		for (int y = 0; y < fractal.getHeight(); y++) {
 			for (int x = 0; x < fractal.getWidth(); x++) {
-				//ComplexNumber z = new ComplexNumber(0, 0);
-				
-				double zReal = xPos / SCREEN_WIDTH + (x - (fractal.getWidth() >> 1))
+				zx = zy = 0;
+				cX = xPos / SCREEN_WIDTH + (x - (fractal.getWidth() >> 1))
 						/ zoom;
-				double zImg = yPos / SCREEN_HEIGHT + (y - (fractal.getHeight() >> 1))
+				cY = yPos / SCREEN_HEIGHT + (y - (fractal.getHeight() >> 1))
 						/ zoom;
-				if(zReal<min) min = zReal;
-				if(zReal>max) max = zReal;
-				
-				//System.out.println(zReal);
-				//ComplexNumber zConst = new ComplexNumber(zReal, zImg);
-				ComplexNumber z = new ComplexNumber(0, 0, zReal, zImg);
-				
 				// System.out.println(yPos / SCREEN_HEIGHT);
-				int iter = calculateIters(z, 2);
+				int iter;
+
+				// escape algor
+				// if zx * zx + zy * zy < 4 then you escape for loop
+				// otherwise iter will hit max iter
+				for (iter = 0; iter < maxIter && zx * zx + zy * zy < 4; iter++) {
+					tmp = zx * zx - zy * zy + cX;
+					zy = 2.0 * zx * zy + cY;
+					zx = tmp;
+				}
 
 				// If the point is in the set. To black color
 				if (iter == maxIter) {
@@ -156,11 +143,11 @@ public class FractalManager extends JPanel {
 				}
 				// If the point is not in the set. Make it colored
 				else {
-					fractal.setRGB(x, y, getColor(z, iter).getRGB());
+					fractal.setRGB(x, y, getColor(iter).getRGB());
 				}
 			}
 		}
-		System.out.println("Max: "+max+" Min: "+min);
+
 		repaint();
 	}
 
@@ -183,8 +170,7 @@ public class FractalManager extends JPanel {
 						+ (y - (fractal.getHeight() >> 1)) / zoom;
 
 				// determines escape velocity
-				ComplexNumber z = new ComplexNumber(realUnit, imgUnit, realConst, imgConst);
-				int iter = calculateIters(z, degree);
+				int iter = getIterations(realUnit, imgUnit);
 				
 				// if point is in the set (doesn't escape) color it black
 				if (iter == maxIter) {
@@ -194,7 +180,7 @@ public class FractalManager extends JPanel {
 
 				// if the point is not in the set make it colored
 				else {
-					fractal.setRGB(x, y, getColor(z, iter).getRGB());
+					fractal.setRGB(x, y, getColor(iter).getRGB());
 				}
 			}
 		}
@@ -202,46 +188,78 @@ public class FractalManager extends JPanel {
 		repaint();
 	}
 	
+	private int getIterations(double realUnit, double imgUnit){
+		int iter;
+		double a, b;
+		for (iter = 0; iter < maxIter; iter++) {
+			a = realUnit;
+			b = imgUnit;
+			
+			ComplexNumber z = getZ(a, b);
+			realUnit = z.getRealPart();
+			imgUnit = z.getImaginaryPart();
+			// if point is outside the circle with radius 2 break out
+			if ((realUnit * realUnit + imgUnit * imgUnit) > 4)
+				break;
+		}
+		
+		return iter;
+	}
+	
+	private ComplexNumber getZ(double a, double b){
+		double real, img;
+		switch(degree){
+			case 2:{
+				real = a * a - b * b + realConst;
+				img = 2 * a * b + imgConst;
+				break;
+			}
+			case 3:{
+				real = (a*a*a) - (3*a*b*b) + realConst;
+				img =  (3*a*a*b) - (b*b*b) + imgConst;
+				break;
+			}
+			case 4:{
+				real = (a*a*a*a) - (6*a*a*b*b) + (b*b*b*b) + realConst;
+				img = (4*a*a*a*b) - (4*a*b*b*b) + imgConst;
+				break;
+			}
+			case 5:{
+				real = (a*a*a*a*a) - (10*a*a*a*b*b) + (5*a*b*b*b*b) + realConst;
+				img = (5*a*a*a*a*b) - (10*a*a*b*b*b) + (b*b*b*b*b) + imgConst;
+				break;
+			}
+			default:{
+				real = 0;
+				img = 0;
+				break;
+			}
+		}
+		return new ComplexNumber(real, img);
+	}
+	
 	public void changeDegree(int degree){
 		if(degree <= 5 && degree >= 2)
 			this.degree = degree;
 	}
 	
-	private Color getColor(ComplexNumber z, int iter){
-//		iter = iter - Math.log(Math.log((z.addSquares())))/Math.log(2);
-		//System.out.println(iter);
-		
-		//iter = iter + 1 - Math.log(Math.log(Math.sqrt(z.addSquares())))/Math.log(2);
-		//System.out.println(Math.log(Math.log(Math.sqrt(z.addSquares())))/Math.log(2));
-//		double mu = iter - Math.log(z.addSquares()) / Math.log(2);
-//		float sin = (float)Math.sin(mu / .1) / 2 + 0.5f;
-//		float cos = (float)Math.cos(mu / .1) / 2 + 0.5f;
-//		
-//		return new Color(cos, cos, sin);
-//		iter = iter + 1 - Math.log(Math.log(z.addSquares()))/Math.log(2);
-//		return Color.getHSBColor((float)((iter/maxIter)), 255, 255);
-		
-		//iter = iter + 1 - Math.log(Math.log(Math.sqrt(z.addSquares())))/Math.log(2);
-//		return new Color(Color.HSBtoRGB((float) (0.95f + 10 * smoother), 0.6f, 1.0f));
-		
-		return new Color((int)(255d * (1d*iter/maxIter)), 255, 255);
-		
-//		double red = iter | (iter << redShift);
-//		red %= 256;
-//		while (red > 255)
-//			red -= 255;
-//
-//		double green = iter | (iter << greenShift);
-//		green %= 256;
-//		while (green > 255)
-//			green -= 255;
-//
-//		double blue = iter | (iter << blueShift);
-//		blue %= 256;
-//		while (blue > 255)
-//			blue -= 255;
-//
-//		return new Color((int) red, (int) green, (int) blue);
+	private Color getColor(int iter){
+		double red = iter | (iter << redShift);
+		red %= 256;
+		while (red > 255)
+			red -= 255;
+
+		double green = iter | (iter << greenShift);
+		green %= 256;
+		while (green > 255)
+			green -= 255;
+
+		double blue = iter | (iter << blueShift);
+		blue %= 256;
+		while (blue > 255)
+			blue -= 255;
+
+		return new Color((int) red, (int) green, (int) blue);
 	}
 	
 	public void changeColorScheme(Color c){
