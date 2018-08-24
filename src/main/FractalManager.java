@@ -224,7 +224,7 @@ public class FractalManager extends JPanel {
 		//iter = iter + 1 - Math.log(Math.log(Math.sqrt(z.addSquares())))/Math.log(2);
 //		return new Color(Color.HSBtoRGB((float) (0.95f + 10 * smoother), 0.6f, 1.0f));
 		
-		return new Color((int)(255d * (1d*iter/maxIter)), 255, 255);
+		return new Color((int)(255d * (1d*iter/maxIter)), 0, 0);
 		
 //		double red = iter | (iter << redShift);
 //		red %= 256;
